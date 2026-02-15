@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "author": "Anonymous maker",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-breadboard-half", "id": "bb1", "top": -319.8, "left": 300.4, "attrs": {} },
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": -325.8, "left": -39, "attrs": {} },
+    { "type": "wokwi-membrane-keypad", "id": "keypad1", "top": -30.8, "left": -244, "attrs": {} },
+    { "type": "wokwi-lcd1602", "id": "lcd1", "top": -764.57, "left": -41.6, "attrs": {} },
+    { "type": "wokwi-led", "id": "led1", "top": -234, "left": 359, "attrs": { "color": "red" } },
+    {
+      "type": "wokwi-led",
+      "id": "led2",
+      "top": -234,
+      "left": 416.6,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": -158.4,
+      "left": 402.65,
+      "rotate": 90,
+      "attrs": { "value": "220000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": -158.4,
+      "left": 345.05,
+      "rotate": 90,
+      "attrs": { "value": "220000" }
+    }
+  ],
+  "connections": [
+    [ "uno:A0", "keypad1:R1", "green", [ "v0" ] ],
+    [ "uno:A1", "keypad1:R2", "green", [ "v0" ] ],
+    [ "uno:A2", "keypad1:R3", "green", [ "v0" ] ],
+    [ "uno:A3", "keypad1:R4", "green", [ "v0" ] ],
+    [ "uno:6", "keypad1:C1", "green", [ "v0" ] ],
+    [ "uno:7", "keypad1:C2", "green", [ "v0" ] ],
+    [ "uno:8", "keypad1:C3", "green", [ "v0" ] ],
+    [ "uno:9", "keypad1:C4", "green", [ "v0" ] ],
+    [ "lcd1:RS", "uno:12", "green", [ "v0" ] ],
+    [ "lcd1:D4", "uno:5", "green", [ "v0" ] ],
+    [ "lcd1:D5", "uno:4", "green", [ "v0" ] ],
+    [ "lcd1:D6", "uno:3", "green", [ "v0" ] ],
+    [ "lcd1:D7", "uno:2", "green", [ "v0" ] ],
+    [ "lcd1:E", "uno:11", "green", [ "v0" ] ],
+    [ "uno:GND.2", "bb1:bn.3", "black", [ "v0" ] ],
+    [ "r2:1", "bb1:6b.h", "", [ "$bb" ] ],
+    [ "r2:2", "bb1:bn.5", "", [ "$bb" ] ],
+    [ "led1:A", "bb1:7b.g", "", [ "$bb" ] ],
+    [ "led1:C", "bb1:6b.g", "", [ "$bb" ] ],
+    [ "bb1:7b.h", "uno:13", "green", [ "v0" ] ],
+    [ "r1:1", "bb1:12b.h", "", [ "$bb" ] ],
+    [ "r1:2", "bb1:bn.10", "", [ "$bb" ] ],
+    [ "led2:A", "bb1:13b.g", "", [ "$bb" ] ],
+    [ "led2:C", "bb1:12b.g", "", [ "$bb" ] ],
+    [ "uno:10", "bb1:13b.h", "green", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
