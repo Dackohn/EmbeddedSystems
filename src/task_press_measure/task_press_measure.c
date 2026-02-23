@@ -1,82 +1,86 @@
 #include "task_press_measure.h"
 #include "../app_config.h"
 #include "../mcal_timer1_1ms/mcal_timer1_1ms.h"
-#include "../app_shared/app_shared.h"
 #include "../dev_hw_stdio/dev_hw_stdio.h"
+#include "../app_shared/app_shared.h"
+#include <stdint.h>
 #include <stdio.h>
 
-static inline uint8_t hw_read_raw(FILE* hw, uint8_t current_raw) {
-    int ch = fgetc(hw);
-    if (ch == EOF) return current_raw;
-    if (ch == (int)HW_BTN_RAW_PRESSED)  return 1u;
-    if (ch == (int)HW_BTN_RAW_RELEASED) return 0u;
-    return current_raw;
-}
+/*
+ * Task 1 - Button press duration measurement
+ *
+ * Hardware accessed only via STDIO stream:
+ *   - fgetc() -> debounced press/release events
+ *   - fputc() -> LED control commands
+ */
 
 void task_press_measure_init(TaskPressMeasureCtx* ctx, uint32_t now_ms) {
-    FILE* hw = dev_hw_stdio_stream();
-
+    (void)now_ms;
     ctx->press_start_ms = 0;
     ctx->pressed = 0;
 
-    /* initialize raw/stable from first HW read */
-    ctx->raw_level = hw_read_raw(hw, 0u);
-    ctx->stable_level = ctx->raw_level;
-    ctx->last_change_ms = now_ms;
+    /* Clear LEDs at startup */
+    fputc(HW_LED_GREEN_OFF, dev_hw_stdio_stream());
+    fputc(HW_LED_RED_OFF,   dev_hw_stdio_stream());
+}
 
-    /* clear indicators at start (stdio -> HW) */
-    fputc(HW_LED_GREEN_OFF, hw);
-    fputc(HW_LED_RED_OFF, hw);
+static uint8_t poll_button_event(uint8_t* released) {
+    int ch = fgetc(dev_hw_stdio_stream());
+    if (ch == EOF) return 0;
+
+    if (ch == HW_BTN_PRESS_EVT) {
+        *released = 0;
+        return 1;
+    }
+
+    if (ch == HW_BTN_RELEASE_EVT) {
+        *released = 1;
+        return 1;
+    }
+
+    return 0;
 }
 
 void task_press_measure_run(void* vctx) {
     TaskPressMeasureCtx* ctx = (TaskPressMeasureCtx*)vctx;
     uint32_t now = mcal_millis();
-    FILE* hw = dev_hw_stdio_stream();
 
-    /* 1) Read raw level changes via HW stdio stream */
-    uint8_t new_raw = hw_read_raw(hw, ctx->raw_level);
-    if (new_raw != ctx->raw_level) {
-        ctx->raw_level = new_raw;
-        ctx->last_change_ms = now;
+    uint8_t released;
+
+    if (!poll_button_event(&released))
+        return;
+
+    /* Press detected → start timing */
+    if (!released) {
+        ctx->press_start_ms = now;
+        ctx->pressed = 1;
+
+        /* Clear indicators while button is held */
+        fputc(HW_LED_GREEN_OFF, dev_hw_stdio_stream());
+        fputc(HW_LED_RED_OFF,   dev_hw_stdio_stream());
+        return;
     }
 
-    /* 2) Debounce: accept change only if raw stayed stable for DEBOUNCE_MS */
-    if (ctx->stable_level != ctx->raw_level) {
-        if ((uint32_t)(now - ctx->last_change_ms) >= (uint32_t)DEBOUNCE_MS) {
-            ctx->stable_level = ctx->raw_level;
+    /* Release detected → compute duration */
+    if (released && ctx->pressed) {
+        ctx->pressed = 0;
 
-            /* debounced edge event */
-            if (ctx->stable_level) {
-                /* Pressed (debounced) */
-                ctx->press_start_ms = now;
-                ctx->pressed = 1u;
+        uint32_t dur = now - ctx->press_start_ms;
+        if (dur < 5) return;
 
-                /* while holding: show no previous result */
-                fputc(HW_LED_GREEN_OFF, hw);
-                fputc(HW_LED_RED_OFF, hw);
-            } else {
-                /* Released (debounced) */
-                if (ctx->pressed) {
-                    ctx->pressed = 0u;
+        uint8_t is_long = (dur >= SHORT_PRESS_THRESHOLD_MS);
 
-                    uint32_t dur = now - ctx->press_start_ms;
-                    uint8_t is_long = (dur >= (uint32_t)SHORT_PRESS_THRESHOLD_MS) ? 1u : 0u;
+        g_press_event.last_press_ms = dur;
+        g_press_event.last_press_is_long = is_long;
+        g_press_event.last_press_valid = 1;
 
-                    g_press_event.last_press_ms = dur;
-                    g_press_event.last_press_is_long = is_long;
-                    g_press_event.last_press_valid = 1u;
-
-                    /* indicate result only when NOT pressed */
-                    if (is_long) {
-                        fputc(HW_LED_GREEN_OFF, hw);
-                        fputc(HW_LED_RED_ON, hw);
-                    } else {
-                        fputc(HW_LED_RED_OFF, hw);
-                        fputc(HW_LED_GREEN_ON, hw);
-                    }
-                }
-            }
+        /* LED classification feedback via STDIO */
+        if (is_long) {
+            fputc(HW_LED_GREEN_OFF, dev_hw_stdio_stream());
+            fputc(HW_LED_RED_ON,    dev_hw_stdio_stream());
+        } else {
+            fputc(HW_LED_RED_OFF,   dev_hw_stdio_stream());
+            fputc(HW_LED_GREEN_ON,  dev_hw_stdio_stream());
         }
     }
 }

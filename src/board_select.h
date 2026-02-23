@@ -1,3 +1,15 @@
+/*
+ * board_select.h
+ *
+ * Compile-time board selection.
+ * You must define one of the following macros in your build flags:
+ *   - BOARD_UNO
+ *   - BOARD_MEGA2560
+ *
+ * The selected header defines the AVR port registers and bit positions
+ * used for button input and the three LEDs.
+ */
+
 #pragma once
 
 #if defined(BOARD_UNO)

@@ -1,4 +1,5 @@
 #include "app_config.h"
+#include "board_select.h"
 #include "dev_hw_stdio/dev_hw_stdio.h"
 
 #include "mcal_timer1_1ms/mcal_timer1_1ms.h"
@@ -20,14 +21,20 @@ static TaskReportCtx       g_t3;
 static void hw_init(void) {
     cli();
 
-    /* Serial console (stdio) */
+    /* Serial monitor via STDIO */
     mcal_uart0_stdio_init(UART_BAUD);
 
-    /* HW device stream (stdio) */
-    dev_hw_stdio_init();
-
-    /* 1ms tick */
+    /* 1ms timebase */
     mcal_timer1_init_1ms();
+
+    /*
+     * Hardware access via STDIO:
+     * - fputc() -> LED control
+     * - fgetc() -> debounced button edge events
+     *
+     * Internally uses MCAL button/led drivers + ECAL debouncing.
+     */
+    dev_hw_stdio_init();
 
     sei();
 }
@@ -56,7 +63,7 @@ int main(void) {
     while (1) {
         if (mcal_consume_tick()) {
             uint32_t t = mcal_millis();
-            srv_scheduler_run_one(&sch, t);
+            srv_scheduler_run_one(&sch, t);   /* ONE task per tick */
         }
     }
 }

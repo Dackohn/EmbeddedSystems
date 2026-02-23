@@ -23,17 +23,25 @@ static void print_stats(const Stats_t* s, const char* tag) {
            (unsigned long)avg);
 }
 
+/*
+ * Poll console using STDIO only:
+ * - mcal_stdio_try_readline uses fgetc(stdin) internally
+ * - parse using sscanf (scanf-family) to meet the requirement explicitly
+ */
 static void console_poll(void) {
     char line[48];
     if (!mcal_stdio_try_readline(line, sizeof(line))) return;
 
-    if (strcmp(line, "stats") == 0) {
+    char cmd[16] = {0};
+    if (sscanf(line, "%15s", cmd) != 1) return;
+
+    if (strcmp(cmd, "stats") == 0) {
         Stats_t snap = g_stats;
         print_stats(&snap, "manual stats");
-    } else if (strcmp(line, "reset") == 0) {
+    } else if (strcmp(cmd, "reset") == 0) {
         reset_stats();
         printf("OK: reset\n");
-    } else if (line[0]) {
+    } else {
         printf("Commands: stats | reset\n");
     }
 }
