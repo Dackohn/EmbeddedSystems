@@ -18,9 +18,7 @@ void ecal_leds_init(void) {
     ecal_led_yellow(0);
 }
 
-void ecal_led_green(uint8_t on)  { pin_write(&LEDG_PORT, LEDG_BIT, on); }
-void ecal_led_red(uint8_t on)    { pin_write(&LEDR_PORT, LEDR_BIT, on); }
-void ecal_led_yellow(uint8_t on) { pin_write(&LEDY_PORT, LEDY_BIT, on); }
+
 
 void ecal_yellow_blink_start(YellowBlink_t* y, uint8_t blinks, uint32_t now_ms) {
     if (!blinks) return;

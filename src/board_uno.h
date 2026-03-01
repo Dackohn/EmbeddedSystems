@@ -16,7 +16,7 @@
 #define BTN_DDR   DDRD
 #define BTN_PORT  PORTD
 #define BTN_PINR  PIND
-#define BTN_BIT   PD2
+#define BTN_BIT   PD7
 
 /* Green LED output. */
 #define LEDG_DDR  DDRB
