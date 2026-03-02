@@ -2,10 +2,14 @@
 
 #include "../app_shared/app_shared.h"
 #include "../mcal_uart0_stdio/mcal_uart0_stdio.h"
-#include "../mcal_timer1_1ms/mcal_timer1_1ms.h"
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+#ifdef USE_FREERTOS
+#include <Arduino_FreeRTOS.h>
+#endif
 
 static void reset_stats(void) {
     g_stats.total = 0;
@@ -14,19 +18,42 @@ static void reset_stats(void) {
     g_stats.sum_ms = 0;
 }
 
-static void print_stats(const Stats_t* s, const char* tag) {
+/* ---------- tiny printing helpers (avoid printf-heavy formatting) ---------- */
+
+static void put_str(const char* s) {
+    fputs(s, stdout);
+}
+
+static void put_u32(uint32_t v) {
+    char buf[11];
+    ultoa((unsigned long)v, buf, 10);
+    put_str(buf);
+}
+
+static void print_stats_compact(const Stats_t* s, const char* tag) {
     uint32_t avg = 0;
     if (s->total) avg = s->sum_ms / s->total;
 
-    printf("\n[%s]\n", tag);
-    printf("total=%lu short=%lu long=%lu avg=%lu ms\n",
-           (unsigned long)s->total,
-           (unsigned long)s->short_count,
-           (unsigned long)s->long_count,
-           (unsigned long)avg);
+    /* Force start at column 0 */
+    put_str("\r\n");
+
+    put_str("[");
+    put_str(tag);
+    put_str("]\r\n");
+
+    put_str("t=");
+    put_u32(s->total);
+    put_str(" sh=");
+    put_u32(s->short_count);
+    put_str(" lo=");
+    put_u32(s->long_count);
+    put_str(" avg=");
+    put_u32(avg);
+    put_str("ms\r\n");
 }
 
-/* Minimal token parser (no sscanf) */
+/* ---------- command parsing (kept minimal) ---------- */
+
 static const char* skip_spaces(const char* p) {
     while (*p == ' ' || *p == '\t') p++;
     return p;
@@ -45,11 +72,6 @@ static void read_token(const char* line, char* out, uint8_t out_sz) {
     out[i] = '\0';
 }
 
-/*
- * Poll console using STDIO only:
- * - mcal_stdio_try_readline uses fgetc(stdin) internally (non-blocking)
- * - parse command without scanf-family to reduce UNO flash/stack
- */
 static void console_poll(void) {
     char line[48];
     if (!mcal_stdio_try_readline(line, sizeof(line))) return;
@@ -60,14 +82,29 @@ static void console_poll(void) {
 
     if (strcmp(cmd, "stats") == 0) {
         Stats_t snap = g_stats;
-        print_stats(&snap, "manual stats");
+        print_stats_compact(&snap, "manual");
     } else if (strcmp(cmd, "reset") == 0) {
         reset_stats();
-        printf("OK: reset\n");
+        put_str("OK: reset\n");
     } else {
-        printf("Commands: stats | reset\n");
+        put_str("Commands: stats | reset\n");
     }
 }
+
+/* ---------- time source ---------- */
+
+static uint32_t now_ms(void) {
+#ifdef USE_FREERTOS
+    /* Use RTOS tick time (stable), avoids Timer1 conflicts */
+    TickType_t t = xTaskGetTickCount();
+    return (uint32_t)((uint32_t)t * (uint32_t)portTICK_PERIOD_MS);
+#else
+    /* Bare-metal path (your timer-based millis) */
+    return mcal_millis();
+#endif
+}
+
+/* ---------- public API ---------- */
 
 void task_report_init(TaskReportCtx* ctx) {
     if (!ctx) return;
@@ -75,21 +112,15 @@ void task_report_init(TaskReportCtx* ctx) {
     ctx->last_report_ms = 0u;
 }
 
-/*
- * In RTOS: call this often (ex: every 20ms) to keep console responsive.
- * It will print the periodic report every 10 seconds based on mcal_millis().
- *
- * In bare-metal: it can still be called every 10s by your scheduler, and it
- * will still work correctly.
- */
 void task_report_run(void* vctx) {
     TaskReportCtx* ctx = (TaskReportCtx*)vctx;
 
+    /* keep console responsive */
     console_poll();
 
     if (!ctx) return;
 
-    uint32_t now = mcal_millis();
+    uint32_t now = now_ms();
 
     if (!ctx->started) {
         ctx->started = 1u;
@@ -97,13 +128,10 @@ void task_report_run(void* vctx) {
         return;
     }
 
-    /* periodic 10s report */
     if ((uint32_t)(now - ctx->last_report_ms) >= 10000u) {
         Stats_t snap = g_stats;
-        print_stats(&snap, "10s report");
+        print_stats_compact(&snap, "10s");
         reset_stats();
-
-        /* avoid drift if loop timing jitters */
         ctx->last_report_ms = now;
     }
 }

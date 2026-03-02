@@ -1,34 +1,33 @@
 /*
  * board_mega2560.h
  *
- * Hardware mapping for Arduino Mega2560 (ATmega2560).
- * Defines AVR register + bit for:
- * - button input
- * - green, yellow, red LEDs output
- *
- * IMPORTANT: Wiring must match these mappings.
+ * Wiring (as in your picture):
+ *  - Green LED  -> Arduino D13
+ *  - Red LED    -> Arduino D12
+ *  - Yellow LED -> Arduino D11
+ *  - Button     -> Arduino D4 (to GND, active-low, use pull-up)
  */
 
 #pragma once
 #include <avr/io.h>
 
-/* Button input (PE4). */
-#define BTN_DDR   DDRE
-#define BTN_PORT  PORTE
-#define BTN_PINR  PINE
-#define BTN_BIT   PE4
+/* Button input (Arduino D4 = PG5). */
+#define BTN_DDR   DDRG
+#define BTN_PORT  PORTG
+#define BTN_PINR  PING
+#define BTN_BIT   PG5
 
-/* Green LED output (PB7). */
+/* Green LED output (Arduino D13 = PB7). */
 #define LEDG_DDR  DDRB
 #define LEDG_PORT PORTB
 #define LEDG_BIT  PB7
 
-/* Red LED output (PB6). */
+/* Red LED output (Arduino D12 = PB6). */
 #define LEDR_DDR  DDRB
 #define LEDR_PORT PORTB
 #define LEDR_BIT  PB6
 
-/* Yellow LED output (PB5). */
+/* Yellow LED output (Arduino D11 = PB5). */
 #define LEDY_DDR  DDRB
 #define LEDY_PORT PORTB
-#define LEDY_BIT  PB5   
+#define LEDY_BIT  PB5

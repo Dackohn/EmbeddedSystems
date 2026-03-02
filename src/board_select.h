@@ -16,6 +16,8 @@
   #include "board_uno.h"
 #elif defined(BOARD_MEGA2560)
   #include "board_mega2560.h"
+#elif defined(BOARD_ESP32)
+  #include "board_esp32.h"
 #else
   #error "Define BOARD_UNO or BOARD_MEGA2560 in compiler flags"
 #endif

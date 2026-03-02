@@ -48,7 +48,18 @@ static void task_button(void* arg) {
             xSemaphoreGive(g_sem_press);
         }
     }
+    
 }
+
+
+// static void task_button(void* arg) {
+//     (void)arg;
+
+//     for (;;) {
+//         xSemaphoreGive(g_sem_press);
+//         vTaskDelay(pdMS_TO_TICKS(1000));
+//     }
+// }
 
 /* -----------------------------------------------------------------------
  * Task 2 — statistics + yellow blink engine
@@ -64,7 +75,7 @@ static void task_stats(void* arg) {
         do {
             task_stats_blink_run(&g_t2);
             if (g_t2.active) {
-                vTaskDelay(1);
+                vTaskDelay(3);
             }
         } while (g_t2.active);
     }
@@ -89,17 +100,13 @@ static void task_report_rtos(void* arg) {
     }
 }
 
-/* -----------------------------------------------------------------------
- * Create tasks + sync objects. Call once from setup().
- * Stack sizes in words (2 bytes each on AVR).
- * Tuned smaller for Arduino UNO (2KB SRAM).
- * ----------------------------------------------------------------------- */
+
 void rtos_tasks_create(void) {
     g_sem_press = xSemaphoreCreateBinary();
 
-    xTaskCreate(task_button,      "btn",    120, NULL, 3, NULL);
-    xTaskCreate(task_stats,       "stats",  150, NULL, 2, NULL);
-    xTaskCreate(task_report_rtos, "report", 180, NULL, 1, NULL);
+    xTaskCreate(task_button,      "btn",    60, NULL, 2, NULL);
+    xTaskCreate(task_stats,       "stats",  60, NULL, 2, NULL);
+    xTaskCreate(task_report_rtos, "report", 150, NULL, 3, NULL);
 }
 
 #endif /* USE_FREERTOS */

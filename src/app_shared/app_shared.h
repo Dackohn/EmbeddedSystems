@@ -25,5 +25,5 @@ typedef struct {
     volatile uint32_t sum_ms;      /* sum of durations for average computation */
 } Stats_t;
 
-extern PressEvent_t g_press_event;
-extern Stats_t g_stats;
+volatile extern PressEvent_t g_press_event;
+volatile extern Stats_t g_stats;

@@ -36,8 +36,8 @@
 #define TASK2_PERIOD_MS             10u
 #define TASK2_OFFSET_MS             1u
 
-/* periodic report (ms). */
-#define TASK3_PERIOD_MS             10000u
+/* periodic report polling interval (ms) - task uses internal 10s timer for actual report. */
+#define TASK3_PERIOD_MS             20u
 #define TASK3_OFFSET_MS             50u
 
 /* Yellow LED blink toggle interval (ms). */
@@ -50,4 +50,4 @@
  * 0 -> active-high (pressed reads 1)
  * 1 -> active-low  (pressed reads 0)
  */
-#define BUTTON_ACTIVE_LOW           0u
+#define BUTTON_ACTIVE_LOW           1u

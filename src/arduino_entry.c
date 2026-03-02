@@ -17,8 +17,8 @@ void setup(void) {
     /* Hardware stream: button debounce + LED control via fputc/fgetc. */
     dev_hw_stdio_init();
 
-    printf("READY: Button press monitor\n");
-    printf("Commands: stats | reset\n");
+    // printf("READY: Button press monitor\n");
+    // printf("Commands: stats | reset\n");
 
     /* Create the three FreeRTOS tasks.
      * The scheduler starts automatically after setup() returns
