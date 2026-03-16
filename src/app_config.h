@@ -1,53 +1,85 @@
-/*
- * app_config.h
- *
- * Central configuration for timing and thresholds:
- * - CPU clock (F_CPU) for AVR timing math
- * - scheduler tick resolution
- * - debounce window and press classification threshold
- * - task periods and offsets (cooperative schedule)
- * - yellow LED blink timing
- * - UART baud rate
- * - button electrical polarity definition
- */
-
 #pragma once
+
 #include <stdint.h>
 
-/* AVR CPU frequency (used by UART baud calculations and timer setup). */
-#ifndef F_CPU
-#define F_CPU 16000000UL
+/* UART */
+#define APP_UART_BAUD 9600UL
+
+/* LCD */
+#define APP_LCD_I2C_ADDR               0x27
+#define APP_LCD_COLS                   16
+#define APP_LCD_ROWS                   2
+
+/* Periods */
+#define APP_TASK_BUTTON_MS             20U
+#define APP_TASK_SENSOR_MS             50U
+#define APP_TASK_CONDITION_MS          20U
+#define APP_TASK_ALERT_MS              20U
+#define APP_TASK_UI_MS                 250U
+
+/* Logic */
+#define APP_BUTTON_DEBOUNCE_MS         50U
+#define APP_ALERT_CONFIRM_MS           120U
+
+/* Critical temperature band in deci-Celsius */
+#define APP_ALERT_LOW_dC               240
+#define APP_ALERT_HIGH_dC              260
+
+/* Thermistor constants */
+#define APP_THERM_SERIES_OHMS          10000.0f
+#define APP_THERM_NOMINAL_OHMS         10000.0f
+#define APP_THERM_NOMINAL_TEMP_C       25.0f
+#define APP_THERM_BETA                 3950.0f
+
+/* Sensor sanity */
+#define APP_ADC_OPEN_THRESHOLD         1015U
+#define APP_ADC_SHORT_THRESHOLD        8U
+#define APP_TEMP_MIN_dC                (240)
+#define APP_TEMP_MAX_dC                (260)
+#define APP_MAX_STEP_dC                80
+
+/* Task stack sizes */
+#define APP_STACK_BUTTON               256U
+#define APP_STACK_SENSOR               384U
+#define APP_STACK_CONDITION            256U
+#define APP_STACK_ALERT                192U
+#define APP_STACK_UI                   512U
+
+/* Warning flags */
+#define APP_WARN_OPEN                  (1u << 0)
+#define APP_WARN_SHORT                 (1u << 1)
+#define APP_WARN_RANGE                 (1u << 2)
+#define APP_WARN_NOISY                 (1u << 3)
+
+/* Supported boards */
+#if defined(__AVR_ATmega328P__)
+  #define APP_BOARD_NAME "UNO"
+
+  /* Button D7 -> PD7 */
+  #define BTN_DDR   DDRD
+  #define BTN_PORT  PORTD
+  #define BTN_PINR  PIND
+  #define BTN_BIT   PD7
+
+  /* LED D13 -> PB5 */
+  #define LED_DDR   DDRB
+  #define LED_PORT  PORTB
+  #define LED_BIT   PB5
+
+#elif defined(__AVR_ATmega2560__)
+  #define APP_BOARD_NAME "MEGA2560"
+
+  /* Button D12 -> PB6 */
+  #define BTN_DDR   DDRB
+  #define BTN_PORT  PORTB
+  #define BTN_PINR  PINB
+  #define BTN_BIT   PB6
+
+  /* LED D13 -> PB7 */
+  #define LED_DDR   DDRB
+  #define LED_PORT  PORTB
+  #define LED_BIT   PB7
+
+#else
+  #error "Unsupported AVR board. Add pin mapping in app_config.h"
 #endif
-
-/* Scheduler tick resolution (system timebase step). */
-#define TICK_MS                     1u
-
-/* Debounce window for mechanical switch bounce filtering (ms). */
-#define DEBOUNCE_MS                 5u
-
-/* Short/Long classification threshold (ms). */
-#define SHORT_PRESS_THRESHOLD_MS    500u
-
-/* press detection + duration measurement (ms). */
-#define TASK1_PERIOD_MS             10u
-#define TASK1_OFFSET_MS             0u
-
-/* statistics update + yellow blink engine (ms). */
-#define TASK2_PERIOD_MS             10u
-#define TASK2_OFFSET_MS             1u
-
-/* periodic report polling interval (ms) - task uses internal 10s timer for actual report. */
-#define TASK3_PERIOD_MS             20u
-#define TASK3_OFFSET_MS             50u
-
-/* Yellow LED blink toggle interval (ms). */
-#define YELLOW_TOGGLE_INTERVAL_MS   50u
-
-/* UART speed for STDIO communication (baud). */
-#define UART_BAUD                   9600UL
-
-/* Button electrical convention:
- * 0 -> active-high (pressed reads 1)
- * 1 -> active-low  (pressed reads 0)
- */
-#define BUTTON_ACTIVE_LOW           1u
